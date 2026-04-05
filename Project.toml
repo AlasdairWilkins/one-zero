@@ -1,0 +1,14 @@
+name = "OneZero"
+uuid = "c0eb8063-daa4-4dfb-8abc-16f1de51e106"
+version = "0.1.0"
+authors = ["Alasdair Wilkins <alasdair.wilkins@gmail.com>"]
+
+[deps]
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
+
+[compat]
+Combinatorics = "1.1.0"
+DataFrames = "1.8.1"
+Revise = "3.14.1"
