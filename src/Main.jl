@@ -1,69 +1,83 @@
-module OneZero
+module Inexhaustible
 
-using Combinatorics
-using DataFrames
+using Base.Iterators
 
-function create_array(src)
-    arr = []
-    for (i, val) in enumerate(src)
-        append!(arr, fill(i - 1, val))
+function get_next_number(digit_range, current_number=[0])
+    if first(current_number) != last(digit_range)
+        current_number[1] += 1
+        return current_number
     end
-    return arr
+
+    if length(current_number) == 1
+        return [0, 1]
+    end
+
+    return vcat([0], get_next_number(digit_range, current_number[2:end]))
 end
 
-function compute(target, max_base=3, max_digit=1)
+function compute_initial_number(base, number, output=[])
+    if number == 0
+        return isempty(output) ? [0] : output
+    end
 
-    data_frame = DataFrame(
-        [Vector{Union{Missing, Bool}}(missing, target) for _ in 1:(max_base - 2)], 
-        [string(x) for x in 3:max_base]
+    power = Int(floor(log(base, number)))
+
+    if isempty(output)
+        output = fill(0, power+1)
+    end
+
+    quotient, remainder = divrem(number, base^power)
+
+    output[power+1] = quotient
+
+    return compute_initial_number(base, remainder, output)
+end
+
+function inexhaustible_generator(pseudo_base, bases, start, finish=nothing)
+
+    if isnothing(finish)
+        finish = start
+        start = 0 
+    end
+
+    digits = 0:pseudo_base-1
+    if first(bases) <= pseudo_base
+        error("All bases must be greater than pseudo base")
+    end
+
+    max_powers = map(base -> Int(floor(log(base, finish))), bases)
+    powers = map(enumerate(max_powers)) do (index, max_power)
+        bases[index] .^ (0:max_power)
+    end
+
+    initial_value = compute_initial_number(pseudo_base, start)
+    println(initial_value)
+
+    next_number = get_next_number(
+        digits, 
+        initial_value,
     )
 
-    for base in 3:max_base
-        compute_for_base(data_frame, target, base, max_digit)
-    end
+    println(next_number)
 
-    transform!(data_frame, AsTable(:) => ByRow(sum) => :row_sum)
-    insertcols!(data_frame, 1, :id => 1:nrow(data_frame))
+    # Get next number
+    # Store powers -- most efficient way to do this???
+    # Multiply out
 
-    df_subset = subset(data_frame, :row_sum => ByRow(>(2)))
+    # takewhile(get_next_number)
 
-    println(df_subset)
+    # channel = Channel() do ch
+
+    #     while true
+
+    #         if(length(ch) == 0) 
+    #             println("exhausted")
+    #             append!()
+    #         end
+    #         put!(ch, a)
+    #         a, b = b, a + b
+    #     end
+    # end
 end
 
-function compute_for_base(data_frame, target, base, max_digit=1)
-    max_num_length = Int(floor(log(base, target)))
-    powers = base .^ (0:max_num_length)
-
-    combinations = []
-
-    max_num_digits = max_digit + 1
-
-    for partition_length in 1:max_num_digits
-        fill_length = max_num_digits - partition_length
-
-        for partition in Iterators.map(
-            x -> fill_length > 0 ? vcat(x, fill(0, fill_length)) : x, 
-            partitions(max_num_length + 1, partition_length)
-        )
-            append!(combinations, Iterators.map(
-                create_array,
-                multiset_permutations(partition)
-            ))
-        end
-    end
-
-    for combination in combinations
-        for number in Iterators.map(
-            perm -> sum(map(x -> powers[x[1]] * x[2], enumerate(perm))),
-            multiset_permutations(combination)
-        )
-            if number in 1:target
-                data_frame[number, base - 2] = true
-            end
-        end
-    end
-
-    data_frame[!, string(base)] = coalesce.(data_frame[!, string(base)], false)    
 end
-
-end # module OneZero
